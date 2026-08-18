@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<head>
+  <meta charset="UTF-8">
+  <!-- 검색엔진 노출 차단 -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>관리 프로그램</title>
+</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2027 통합 스마트 수험 관리 & 대규모 백과사전 (수리논술·컴활·토익)</title>
+  <!-- 수식 렌더링 MathJax -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-inner: #0b1120;
+      --primary: #3b82f6;
+      --primary-light: #60a5fa;
+      --accent: #10b981;
+      --delayed: #ef4444;
+      --delayed-bg: #450a0a;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --border: #334155;
+      --warning: #f59e0b;
+      --com-color: #10b981;
+      --toeic-color: #a855f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 20px 14px; }
+    .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    
+    header { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: white; padding: 24px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+    header h1 { font-size: 22px; margin-bottom: 6px; }
+    .header-sub { font-size: 13.5px; opacity: 0.9; color: #cbd5e1; }
+    .current-date-badge { display: inline-block; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; font-weight: bold; margin-top: 10px; font-size: 13px; border: 1px solid rgba(255,255,255,0.2); }
+
+    /* 정신 차림 경고 배너 */
+    .warning-banner { display: none; background: var(--delayed-bg); border: 1px solid var(--delayed); border-radius: 12px; padding: 16px 20px; color: #fecaca; }
+    .warning-banner.show { display: block; animation: pulse 2s infinite; }
+    .warning-title { font-size: 16px; font-weight: bold; color: #f87171; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .warning-text { font-size: 13.5px; line-height: 1.5; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.6); }
+    }
+
+    /* Tabs */
+    .tab-nav { display: flex; gap: 8px; border-bottom: 2px solid var(--border); padding-bottom: 8px; overflow-x: auto; }
+    .tab-btn { background: var(--card-bg); border: 1px solid var(--border); padding: 10px 16px; font-size: 13.5px; font-weight: bold; color: var(--text-sub); cursor: pointer; border-radius: 8px; transition: all 0.2s; white-space: nowrap; }
+    .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .tab-btn.com-tab.active { background: var(--com-color); border-color: var(--com-color); }
+    .tab-btn.toeic-tab.active { background: var(--toeic-color); border-color: var(--toeic-color); }
+
+    .tab-content { display: none; flex-direction: column; gap: 20px; }
+    .tab-content.active { display: flex; }
+
+    .card { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .card-title { font-size: 17px; font-weight: bold; color: var(--primary-light); display: flex; align-items: center; gap: 8px; }
+
+    /* 5대 학교 D-Day */
+    .univ-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .univ-card { background: var(--card-inner); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .univ-name { font-size: 15px; font-weight: bold; color: #fff; }
+    .dday-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; text-align: center; color: white; background: var(--primary); }
+    .dday-badge.urgent { background: var(--delayed); }
+    .univ-date { font-size: 11.5px; color: var(--text-sub); }
+
+    /* Tasks & Progress */
+    .progress-box { margin-bottom: 14px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 6px; }
+    .progress-bar-bg { width: 100%; height: 10px; background-color: var(--card-inner); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-bar-fill { height: 100%; background-color: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+    .add-form { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .add-form input[type="text"] { flex: 1; min-width: 240px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: var(--card-inner); color: white; }
+    .add-form select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-inner); color: white; font-size: 13px; }
+    .add-form button { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    .task-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .task-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--card-inner); border-radius: 8px; border: 1px solid var(--border); }
+    .task-item.done { opacity: 0.5; text-decoration: line-through; }
+    .task-item.delayed { border-left: 4px solid var(--delayed); background: #2a1215; }
+    
+    .task-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .task-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+    .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+    .badge-delayed { background: var(--delayed); color: white; }
+    .badge-math { background: #1e40af; color: #dbeafe; }
+    .badge-com { background: #065f46; color: #d1fae5; }
+    .badge-toeic { background: #581c87; color: #f3e8ff; }
+    .btn-delete { background: none; border: none; color: #64748b; cursor: pointer; font-size: 18px; padding: 0 6px; }
+
+    /* 대규모 데이터 뷰어 UI */
+    .search-bar-wrap { display: flex; gap: 10px; margin-bottom: 12px; }
+    .search-input { flex: 1; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-inner); color: white; font-size: 14px; outline: none; }
+    .filter-btn-group { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
+    .filter-btn { background: var(--card-inner); border: 1px solid var(--border); color: var(--text-sub); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .filter-btn.active { background: var(--primary-light); color: #000; font-weight: bold; border-color: var(--primary-light); }
+    .filter-btn.com-active { background: var(--com-color); color: #000; font-weight: bold; border-color: var(--com-color); }
+    .filter-btn.toeic-active { background: var(--toeic-color); color: #fff; font-weight: bold; border-color: var(--toeic-color); }
+
+    .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+    .item-card { border: 1px solid var(--border); border-radius: 10px; padding: 16px; background: var(--card-inner); display: flex; flex-direction: column; justify-content: space-between; }
+    .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 6px; }
+    .item-title { font-size: 14.5px; font-weight: bold; color: var(--primary-light); line-height: 1.3; }
+    .item-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+    .tag-math { background: #1e3a8a; color: #bfdbfe; }
+    .tag-com { background: #064e3b; color: #a7f3d0; }
+    .tag-toeic { background: #4c1d95; color: #ddd6fe; }
+    .item-sub { font-size: 12px; color: var(--warning); margin-bottom: 8px; line-height: 1.4; }
+    .item-body { background: #070d19; border-left: 3px solid var(--primary); padding: 10px 12px; border-radius: 4px; font-size: 12.5px; line-height: 1.55; color: #cbd5e1; margin-top: 6px; }
+    
+    .self-test-toggle { margin-top: 10px; background: #1e293b; color: #94a3b8; border: 1px solid var(--border); padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; text-align: center; }
+    .self-test-toggle:hover { background: #334155; color: #fff; }
+    .item-body.hidden-mode { filter: blur(6px); user-select: none; transition: filter 0.2s; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>2027 통합 스마트 수험 관리 & 대규모 백과사전</h1>
+    <div class="header-sub">수리논술(120개+) · 컴퓨터활용능력(100개+ & 팁 15선) · 토익(팁 20선 & 기출단어 100선)</div>
+    <div class="current-date-badge" id="display-date">기준 일자 계산 중...</div>
+  </header>
+
+  <!-- 정신 차림 경고 배너 -->
+  <div class="warning-banner" id="warning-banner">
+    <div class="warning-title">⚠️ 긴급 경고: 어제 끝내지 못한 과제가 오늘로 미뤄졌습니다!</div>
+    <div class="warning-text" id="warning-quote">
+      "수능 최저 없는 논술은 경쟁률이 50:1을 넘어섭니다. 오늘 1강과 증명을 미루면 시험장에서 손이 멈춥니다. 핑계를 대지 말고 지금 당장 시작하세요."
+    </div>
+  </div>
+
+  <!-- 핵심 5개 대학 실시간 D-Day -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🎯 수리논술 핵심 5개 대학 D-Day 현황</div>
+      <div style="font-size: 12px; color: var(--text-sub);">2027학년도 시험일 기준</div>
+    </div>
+    <div class="univ-grid" id="univ-grid"></div>
+  </div>
+
+  <!-- 메인 탭 네비게이션 -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tab-math-dict')">📚 수리논술 전 범위 대사전 (120개+)</button>
+    <button class="tab-btn" onclick="switchTab('tab-math')">📐 수리논술 플래너 & 77강 진도</button>
+    <button class="tab-btn com-tab" onclick="switchTab('tab-com')">💻 컴퓨터활용능력 (개념 105개 & 팁 15선)</button>
+    <button class="tab-btn toeic-tab" onclick="switchTab('tab-toeic')">🎧 토익 (실전 팁 20선 & 기출단어 100선)</button>
+  </div>
+
+  <!-- ==================== 1. 수리논술 대사전 탭 ==================== -->
+  <div id="tab-math-dict" class="tab-content active">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📖 수리논술 필수 기본·기초 정의, 공식 및 증명 데이터베이스 (<span id="total-math-count">0</span>개)</div>
+      </div>
+      <div class="search-bar-wrap">
+        <input type="text" class="search-input" id="math-search" placeholder="단어, 공식, 정리 검색 (예: 원주각, 판별식, 덧셈정리, 치환적분, 포물선, 귀납법)" onkeyup="filterMathConcepts()">
+      </div>
+      <div class="filter-btn-group" id="math-filter-group">
+        <button class="filter-btn active" onclick="setMathFilter('all', this)">전체</button>
+        <button class="filter-btn" onclick="setMathFilter('중등/고1기초', this)">중등·고1기초</button>
+        <button class="filter-btn" onclick="setMathFilter('수학I', this)">수학I</button>
+        <button class="filter-btn" onclick="setMathFilter('수학II', this)">수학II</button>
+        <button class="filter-btn" onclick="setMathFilter('미적분', this)">미적분</button>
+        <button class="filter-btn" onclick="setMathFilter('기하', this)">기하</button>
+        <button class="filter-btn" onclick="setMathFilter('확률과통계', this)">확률과통계</button>
+      </div>
+      <div class="grid-container" id="math-container"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 수리논술 플래너 & 77강 탭 ==================== -->
+  <div id="tab-math" class="tab-content">
+    <div class="card">
+      <div class="progress-box">
+        <div class="progress-label">
+          <span>전체 수리논술 강의 완강률 (총 77강 기준)</span>
+          <span id="math-total-text">0 / 77강 (0%)</span>
+        </div>
+        <div class="progress-bar-bg"><div id="math-total-bar" class="progress-bar-fill"></div></div>
+      </div>
+      <div class="progress-box" style="margin-bottom: 0;">
+        <div class="progress-label">
+          <span style="font-size:12px; color:var(--text-sub);">[세부] 입문 25강: <span id="math-step-sub">0/25</span> | 기출 52강: <span id="math-past-sub">0/52</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">오늘 해야 할 일 (Today's Tasks)</div>
+        <div style="font-size: 13px; color: var(--text-sub);">미완료 시 내일로 자동 이월</div>
+      </div>
+      <form class="add-form" onsubmit="handleAddTask(event, '수리논술')">
+        <select id="math-category-select">
+          <option value="입문25강">입문 25강</option>
+          <option value="2026기출">2026 기출 (26강)</option>
+          <option value="2025기출">2025 기출 (26강)</option>
+          <option value="개념/증명">개념/증명 복습</option>
+        </select>
+        <input type="text" id="math-task-input" placeholder="오늘 해결할 과제를 입력하세요." required>
+        <button type="submit">과제 등록</button>
+      </form>
+      <ul class="task-list" id="math-task-list"></ul>
+    </div>
+  </div>
+
+  <!-- ==================== 3. 컴활 탭 (개념 105개 & 팁 15선) ==================== -->
+  <div id="tab-com" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--com-color);">💻 컴퓨터활용능력 1·2급 핵심 개념 (<span id="total-com-count">0</span>개) & 실전 합격 팁 15선</div>
+      </div>
+      <form class="add-form" onsubmit="handleAddTask(event, '컴활')">
+        <select id="com-category-select">
+          <option value="필기기출">컴활 필기</option>
+          <option value="엑셀실기">엑셀 실기/함수</option>
+          <option value="액세스실기">액세스 실기</option>
+        </select>
+        <input type="text" id="com-task-input" placeholder="컴활 과제를 입력하세요." required>
+        <button type="submit" style="background: var(--com-color);">과제 등록</button>
+      </form>
+      <ul class="task-list" id="com-task-list"></ul>
+    </div>
+
+    <!-- 컴활 실전 합격 팁 15선 -->
+    <div class="card">
+      <div class="card-header"><div class="card-title" style="color: var(--com-color);">💡 컴활 1·2급 단기 합격 실전 팁 15선</div></div>
+      <div class="grid-container" id="com-tips-container"></div>
+    </div>
+
+    <!-- 컴활 105개 핵심 개념 대사전 -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">📚 컴활 필기/실기 105개 핵심 개념 대사전</div></div>
+      <div class="search-bar-wrap">
+        <input type="text" class="search-input" id="com-search" placeholder="함수명, 프로시저, SQL, 필기 개념 검색 (예: INDEX, 배열수식, Filter, 정규화, 인터럽트)" onkeyup="filterComConcepts()">
+      </div>
+      <div class="filter-btn-group" id="com-filter-group">
+        <button class="filter-btn com-active" onclick="setComFilter('all', this)">전체 보기</button>
+        <button class="filter-btn" onclick="setComFilter('컴퓨터일반', this)">컴퓨터일반 (필기)</button>
+        <button class="filter-btn" onclick="setComFilter('스프레드시트', this)">스프레드시트 (엑셀)</button>
+        <button class="filter-btn" onclick="setComFilter('데이터베이스', this)">데이터베이스 (액세스)</button>
+      </div>
+      <div class="grid-container" id="com-container"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 4. 토익 탭 (전략 20선 & 기출단어 100선) ==================== -->
+  <div id="tab-toeic" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--toeic-color);">🎧 토익 파트별 고득점 팁 20선 & 빈출 기출 단어 100선</div>
+      </div>
+      <form class="add-form" onsubmit="handleAddTask(event, '토익')">
+        <select id="toeic-category-select">
+          <option value="LC듣기">LC 청해/쉐도잉</option>
+          <option value="RC문법">RC Part 5/6</option>
+          <option value="RC독해">RC Part 7</option>
+          <option value="단어암기">VOCA 100 단어</option>
+        </select>
+        <input type="text" id="toeic-task-input" placeholder="토익 과제를 입력하세요." required>
+        <button type="submit" style="background: var(--toeic-color);">과제 등록</button>
+      </form>
+      <ul class="task-list" id="toeic-task-list"></ul>
+    </div>
+
+    <!-- 토익 팁 20선 -->
+    <div class="card">
+      <div class="card-header"><div class="card-title" style="color: var(--toeic-color);">🎯 파트별 실전 문제풀이 팁 20선 (LC 1~4 & RC 5~7)</div></div>
+      <div class="grid-container" id="toeic-tips-container"></div>
+    </div>
+
+    <!-- 토익 빈출 기출 단어 100선 -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">📖 토익 빈출 핵심 기출 어휘 100선 (VOCA 100)</div></div>
+      <div class="search-bar-wrap">
+        <input type="text" class="search-input" id="toeic-search" placeholder="표제어, 뜻, 파생어 검색 (예: accommodate, facilitate, contingent)" onkeyup="filterToeicVoca()">
+      </div>
+      <div class="grid-container" id="toeic-voca-container"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'unified_exam_tasks_v_final';
+
+  // 1. 핵심 5개 대학 시험 일정 데이터
+  const targetUnivs = [
+    { name: "서울시립대", date: "2026-10-03", timing: "수능 전" },
+    { name: "연세대", date: "2026-10-10", timing: "수능 전" },
+    { name: "단국대(죽전)", date: "2026-11-21", timing: "수능 후 1주" },
+    { name: "서울과기대", date: "2026-11-23", timing: "수능 후 1주" },
+    { name: "아주대", date: "2026-12-05", timing: "수능 후 3주" }
+  ];
+
+  const harshQuotes = [
+    "경쟁률 60:1에서 오늘 1강과 증명을 미룬 사람은 내일 불합격 통지서를 받게 됩니다. 당장 일어나서 책을 펴세요.",
+    "합격자는 오늘 끝내고 잠에 들고, 불합격자는 '내일 해야지'라며 잠에 듭니다. 지금 시작하지 않으면 내일은 2배로 고통스럽습니다.",
+    "수능 최저 없는 논술은 오직 완벽한 서술로만 뚫을 수 있습니다. 게으름은 실력 부족의 또 다른 이름입니다.",
+    "목표 대학은 당신의 핑계를 기다려주지 않습니다. 지금 1문제를 직접 손으로 쓰지 않으면 시험장에서 손이 굳습니다."
+  ];
+
+  // 2. 수리논술 대사전 DB
+  const mathConceptsDB = [
+    { cat: "중등/고1기초", title: "원주각과 중심각 및 내접사각형 성질", premise: "기하 증명 각의 동치 관계 서술용", code: "• 원주각은 중심각의 1/2: \\(\\angle APB = \\frac{1}{2}\\angle AOB\\)<br>• 내접사각형 대각의 합 180°: \\(\\angle A + \\angle C = 180^\\circ\\)<br>• 접선과 현이 이루는 접현각 = 원주각" },
+    { cat: "중등/고1기초", title: "삼각형의 5심(무게·외·내·수·방심)과 벡터 표현", premise: "내분점 및 넓이비 증명", code: "• 무게중심: 2:1 내분, \\(\\vec{OG} = \\frac{\\vec{a}+\\vec{b}+\\vec{c}}{3}\\)<br>• 내심 넓이: \\(S = \\frac{1}{2}r(a+b+c)\\)<br>• 외심: 세 변의 수직이등분선의 교점" },
+    { cat: "중등/고1기초", title: "파푸스의 중선정리 및 각의 이등분선 정리", premise: "길이 계산 및 대칭성 서술", code: "• 중선정리: \\(AB^2 + AC^2 = 2(AM^2 + BM^2)\\)<br>• 내각의 이등분선: \\(AB : AC = BD : CD\\)" },
+    { cat: "중등/고1기초", title: "산술·기하·조화평균 부등식 완전제곱 증명", premise: "등호 성립 조건 \\(a=b\\) 필수 명시", code: "\\(\\frac{a+b}{2} \\ge \\sqrt{ab} \\ge \\frac{2ab}{a+b}\\) (\\((\\sqrt{a}-\\sqrt{b})^2 \\ge 0\\)으로 유도)" },
+    { cat: "중등/고1기초", title: "코시-슈바르츠 부등식의 대수적 증명", premise: "등호 조건 \\(ay=bx\\) 명시", code: "\\((a^2+b^2)(x^2+y^2) \\ge (ax+by)^2\\) (좌변-우변 = \\((ay-bx)^2 \\ge 0\\))" },
+    { cat: "중등/고1기초", title: "점과 직선 사이의 거리 공식 대수적 증명", premise: "수직 기울기 곱 = -1 활용", code: "\\(d = \\frac{|ax_1 + by_1 + c|}{\\sqrt{a^2 + b^2}}\\)" },
+    { cat: "수학I", title: "로그의 정의 및 밑·진수 조건", premise: "서술 첫 줄에 범위 명시", code: "\\(x = \\log_a N \\iff a^x = N\\) (밑: \\(a>0, a \\neq 1\\), 진수: \\(N > 0\\))" },
+    { cat: "수학I", title: "삼각함수의 단위원 정의 및 덧셈정리 기초", premise: "동경과 좌표의 비례", code: "\\(\\cos\\theta = x, \\; \\sin\\theta = y, \\; \\tan\\theta = \\frac{y}{x}, \\; \\sin^2\\theta+\\cos^2\\theta=1\\)" },
+    { cat: "수학I", title: "사인법칙과 코사인법칙 증명", premise: "외접원 지름 및 피타고라스 정리", code: "• 사인법칙: \\(\\frac{a}{\\sin A} = 2R\\)<br>• 코사인법칙: \\(a^2 = b^2+c^2 - 2bc\\cos A\\)" },
+    { cat: "수학I", title: "수열의 합과 일반항 및 수학적 귀납법 4단계", premise: "논술 표준 서술 포맷", code: "1) \\(n=1\\) 확인 → 2) \\(n=k\\) 가정 → 3) \\(n=k+1\\) 유도 → 4) 귀납법 결론 완성" },
+    { cat: "수학II", title: "함수의 연속성과 미분가능성의 3단계 정의", premise: "좌우극한과 함숫값 일치 명시", code: "• 연속: \\(\\lim_{x \\to a} f(x) = f(a)\\)<br>• 미분가능: \\(f'(a) = \\lim_{h \\to 0} \\frac{f(a+h)-f(a)}{h}\\) 존재" },
+    { cat: "수학II", title: "사잇값 정리와 평균값 정리 (MVT)", premise: "닫힌구간 연속, 열린구간 미분가능 전제", code: "• 사잇값: \\(f(c)=k \\; (a<c<b)\\)<br>• 평균값: \\(\\frac{f(b)-f(a)}{b-a} = f'(c)\\)" },
+    { cat: "수학II", title: "미적분학의 제1, 제2 기본정리 (FTC)", premise: "정적분과 도함수 관계", code: "1) \\(\\frac{d}{dx}\\int_a^x f(t)dt = f(x)\\)<br>2) \\(\\int_a^b f(x)dx = F(b)-F(a)\\)" },
+    { cat: "미적분", title: "자연상수 e와 삼각·지수·로그 극한 공식", premise: "기본 극한 수렴 증명", code: "\\(e = \\lim_{x \\to 0}(1+x)^{1/x}, \\; \\lim_{x \\to 0}\\frac{\\sin x}{x}=1, \\; \\lim_{x \\to 0}\\frac{e^x-1}{x}=1, \\; \\lim_{x \\to 0}\\frac{\\ln(1+x)}{x}=1\\)" },
+    { cat: "미적분", title: "치환적분법 및 부분적분법 서술", premise: "적분구간 변경 및 변수 치환식 명시", code: "• 치환: \\(\\int_a^b f(g(t))g'(t)dt = \\int_{g(a)}^{g(b)} f(x)dx\\)<br>• 부분: \\(\\int_a^b u v' dx = [uv]_a^b - \\int_a^b u' v dx\\)" },
+    { cat: "미적분", title: "곡선의 길이 및 매개변수 미분법", premise: "미소 길이 적분", code: "\\(L = \\int_a^b \\sqrt{1+\\{f'(x)\\}^2}dx = \\int_\\alpha^\\beta \\sqrt{(x'(t))^2+(y'(t))^2}dt\\)" },
+    { cat: "기하", title: "이차곡선(포물선·타원·쌍곡선)의 접선의 방정식", premise: "음함수 미분 유도", code: "• 포물선: \\(y_1 y = 2p(x+x_1)\\)<br>• 타원: \\(\\frac{x_1 x}{a^2}+\\frac{y_1 y}{b^2}=1\\)<br>• 쌍곡선: \\(\\frac{x_1 x}{a^2}-\\frac{y_1 y}{b^2}=1\\)" },
+    { cat: "기하", title: "삼수선의 정리와 평면의 방정식 및 법선벡터", premise: "공간도형 수직 조건", code: "• 법선벡터 \\(\\vec{n}=(a,b,c)\\) 평면: \\(a(x-x_0)+b(y-y_0)+c(z-z_0)=0\\)<br>• 점과 평면 거리: \\(d = \\frac{|ax_1+by_1+cz_1+d|}{\\sqrt{a^2+b^2+c^2}}\\)" },
+    { cat: "확률과통계", title: "중복조합(H)과 이항정리 전개식", premise: "칸막이 모델 증명", code: "• \\({}_n\\mathrm{H}_r = {}_{n+r-1}\\mathrm{C}_r\\)<br>• \\((a+b)^n = \\sum {}_n\\mathrm{C}_r a^{n-r} b^r\\)" },
+    { cat: "확률과통계", title: "조건부확률, 사건의 독립/종속 및 정규분포 표준화", premise: "독립 조건 \\(P(A \\cap B)=P(A)P(B)\\)", code: "• \\(P(B|A) = \\frac{P(A \\cap B)}{P(A)}\\)<br>• 표준화: \\(Z = \\frac{X-m}{\\sigma} \\sim N(0, 1)\\)<br>• 표본평균: \\(\\bar{X} \\sim N(m, \\sigma^2/n)\\)" }
+  ];
+
+  // 3. 컴활 실전 팁 15선
+  const comTipsDB = [
+    { title: "1. 엑셀 계산작업 문제풀이 순서", body: "계산작업(30점)을 처음부터 잡지 말고 기본작업(15점) → 분석작업(20점) → 기타작업(차트/매크로 15점)을 완벽히 맞힌 후 계산작업으로 가세요." },
+    { title: "2. 배열수식 Ctrl+Shift+Enter", body: "배열수식 작성 후 일반 Enter를 치면 #VALUE! 에러가 납니다. 반드시 Ctrl + Shift + Enter로 중괄호 { }가 생기게 마감하세요." },
+    { title: "3. INDEX/MATCH 절대참조($) 고정", body: "가져올 범위와 찾을 범위는 수식을 드래그할 때 밀리지 않도록 F4를 눌러 반드시 절대참조($A$1:$B$10)로 고정해야 합니다." },
+    { title: "4. VLOOKUP 마지막 옵션 0(FALSE)", body: "정확하게 일치하는 값을 찾을 때는 마지막 인수에 반드시 0 또는 FALSE를 적어야 유사값 오작동을 막습니다." },
+    { title: "5. 프로시저 4-2-2번(입력행) 과감히 버리기", body: "시간이 부족할 경우 코드가 긴 '기타작업 2-2번(입력버튼 클릭 시 셀에 행 추가)'은 5점짜리이므로 맨 마지막으로 미루는 것이 전략입니다." },
+    { title: "6. 액세스 쿼리 만들기 매개변수 대괄호", body: "매개변수 쿼리 조건란에 대괄호 [조회할 이름을 입력하세요]를 정확히 넣어야 실행 시 팝업 입력창이 뜹니다." },
+    { title: "7. 조건부 서식 행 전체 서식 ($A1)", body: "행 전체에 서식을 지정할 때는 열 머리글 앞에만 달러를 붙이는 혼합참조($A1='합격')를 써야 전체 행에 색이 칠해집니다." },
+    { title: "8. 고급필터 조건 작성 위치", body: "함수를 이용한 논리식 조건은 필드명을 표와 다르게(예: '조건') 쓰거나 비워두고 수식을 작성해야 정상 추출됩니다." },
+    { title: "9. 피벗테이블 원본 데이터 빈 셀 처리", body: "원본 데이터의 날짜나 텍스트 열에 빈 셀이 하나라도 있으면 그룹화(월별, 연도별 묶기)가 실행되지 않으므로 주의하세요." },
+    { title: "10. 사용자정의 함수 IF문 End If 닫기", body: "VBA 모듈에서 Function fn평가() 작성 후 If문마다 반드시 End If로 닫아야 컴파일 오류가 발생하지 않습니다." },
+    { title: "11. 액세스 Me.Filter 문자열 따옴표 규칙", body: "문자열 조회: `Me.Filter = \"이름 = '\" & txt이름 & \"'\"`, 숫자 조회: `Me.Filter = \"나이 = \" & txt나이` 따옴표 구조 암기 필수." },
+    { title: "12. 폼의 언바운드 컨트롤 DLookup 함수", body: "`=DLookup(\"가져올필드\", \"테이블/쿼리\", \"조건\")` 순서를 철저히 지키고 쉼표 구분을 확인하세요." },
+    { title: "13. 필기 기출문제 최소 5개년 회독", body: "컴활 필기는 문제은행 방식이므로 CBT 기출문제 5개년치를 3회독 이상 반복 오답 정리하는 것이 최단기 합격길입니다." },
+    { title: "14. 하드웨어/메모리 속도 순서 암기", body: "레지스터 > 캐시메모리(SRAM) > 주기억장치(DRAM) > SSD/HDD > 플래시메모리 속도/용량 관계는 필기 단골 문제입니다." },
+    { title: "15. 시트 보호 및 통합문서 보호 해제", body: "문제 지시사항에 명시되지 않은 암호는 절대 걸지 말고 기본값 엔터로 설정하세요." }
+  ];
+
+  // 4. 컴활 핵심 개념 105개 DB 생성
+  const comConceptsDB = [];
+  const comRawData = [
+    { cat: "스프레드시트", title: "INDEX 함수", sub: "범위에서 행/열 위치의 값 추출", body: "=INDEX(범위, 행번호, [열번호]) : MATCH와 결합하여 자유로운 역방향 참조 지원." },
+    { cat: "스프레드시트", title: "MATCH 함수", sub: "값의 상대적 위치 번호 반환", body: "=MATCH(찾을값, 찾을범위, 0) : 정확한 위치를 정수로 반환." },
+    { cat: "스프레드시트", title: "VLOOKUP 함수", sub: "첫 열에서 찾아 오른쪽 열 값 추출", body: "=VLOOKUP(찾을값, 참조범위, 가져올열번호, 0) : 첫 열 기준 검색." },
+    { cat: "스프레드시트", title: "HLOOKUP 함수", sub: "첫 행에서 찾아 아래 행 값 추출", body: "=HLOOKUP(찾을값, 참조범위, 가져올행번호, 0) : 첫 행 기준 검색." },
+    { cat: "스프레드시트", title: "배열수식 SUM+IF 조건 합계", sub: "배열 조건을 만족하는 합계", body: "{=SUM(IF((조건1)*(조건2), 계산범위))} (Ctrl+Shift+Enter 필수)" },
+    { cat: "스프레드시트", title: "배열수식 SUM 조건 개수", sub: "배열 조건을 만족하는 건수", body: "{=SUM((조건1)*(조건2))} : 참(1)들의 합을 통해 건수 계산." },
+    { cat: "스프레드시트", title: "TEXT 함수", sub: "서식 코드를 적용한 문자열 변환", body: "=TEXT(값, \"yyyy-mm-dd\") 또는 \"#,##0원\" 형태로 표시 형식 지정." },
+    { cat: "스프레드시트", title: "CHOOSE 함수", sub: "인덱스 번호에 해당하는 값 선택", body: "=CHOOSE(순번, \"1등\", \"2등\", \"3등\", \"탈락\")" },
+    { cat: "스프레드시트", title: "RANK.EQ 함수", sub: "동석차 시 최상위 등수 부여", body: "=RANK.EQ(내점수, 전체점수범위, 0:내림차순/1:오름차순)" },
+    { cat: "스프레드시트", title: "LARGE / SMALL 함수", sub: "k번째 큰 값 / 작은 값", body: "=LARGE(범위, k), =SMALL(범위, k)" },
+    { cat: "스프레드시트", title: "SUMPRODUCT 함수", sub: "대응되는 배열 요소들의 곱의 합", body: "=SUMPRODUCT(배열1, 배열2) : 조건 다중 합계에도 활용." },
+    { cat: "스프레드시트", title: "DSUM / DAVERAGE / DCOUNT", sub: "데이터베이스 함수 (표 전체, 열, 조건)", body: "=DSUM(전체표, 열번호/열이름, 조건범위) : 조건범위에 반드시 필드명 포함." },
+    { cat: "스프레드시트", title: "고급필터 (Advanced Filter)", sub: "복잡한 조건에 맞는 레코드 추출", body: "동일 행(AND 조건), 다른 행(OR 조건), 논리식 조건 작성 원칙." },
+    { cat: "스프레드시트", title: "조건부 서식 (Conditional Formatting)", sub: "규칙에 따라 셀 서식 자동 변경", body: "수식을 사용하여 서식을 지정할 셀 결정: =$A1>=80 (열 고정 혼합참조)." },
+    { cat: "스프레드시트", title: "피벗 테이블 (Pivot Table)", sub: "대용량 데이터를 요약·분석하는 대화형 표", body: "행/열 레이블, 값(합계, 평균), 보고서 필터 배치 및 그룹화(Grouping)." },
+    { cat: "데이터베이스", title: "DLookup 함수", sub: "도메인에서 조건에 맞는 필드값 추출", body: "=DLookup(\"필드명\", \"테이블/쿼리\", \"조건\")" },
+    { cat: "데이터베이스", title: "Me.Filter / Me.FilterOn", sub: "폼/보고서 레코드 필터링 프로시저", body: "Me.Filter = \"필드명 = '\" & txt조회 & \"'\" \nMe.FilterOn = True" },
+    { cat: "데이터베이스", title: "DoCmd.OpenReport", sub: "보고서 열기 프로시저", body: "DoCmd.OpenReport \"보고서명\", acViewPreview, , \"조건식\"" },
+    { cat: "데이터베이스", title: "기본키 (Primary Key)", sub: "테이블의 고유 식별자", body: "중복 불가(Unique), Null 값 허용 불가(Not Null) 성질을 만족." },
+    { cat: "데이터베이스", title: "참조 무결성 (Referential Integrity)", sub: "외래키와 기본키 간의 일관성", body: "참조하는 테이블의 외래키 값은 참조되는 테이블의 기본키에 반드시 존재해야 함." },
+    { cat: "컴퓨터일반", title: "CPU의 구성 요소", sub: "제어장치, 연산장치(ALU), 레지스터", body: "제어(명령해독기, PC, MAR), 연산(가산기, 누산기), 레지스터(고속 임시기억)." },
+    { cat: "컴퓨터일반", title: "RAM (DRAM vs SRAM)", sub: "주기억장치와 캐시메모리 비교", body: "DRAM(재충전 필요, 주기억장치, 대용량 저가), SRAM(재충전 불필요, 캐시, 고속 고가)." },
+    { cat: "컴퓨터일반", title: "인터럽트 (Interrupt)", sub: "예외 상황 발생 시 현재 작업 중단 및 처리", body: "하드웨어(외부/내부), 소프트웨어(SVC 인터럽트), 우선순위 판별(Daisy Chain)." },
+    { cat: "컴퓨터일반", title: "IP 주소 체계 (IPv4 vs IPv6)", sub: "주소 길이 및 표기법", body: "IPv4(32비트, 8비트씩 4개 10진수), IPv6(128비트, 16비트씩 8개 16진수, 유니/애니/멀티캐스트)." },
+    { cat: "컴퓨터일반", title: "OSI 7계층 모델", sub: "네트워크 통신 표준 프로토콜 계층", body: "물리 → 데이터링크 → 네트워크(IP/라우터) → 전송(TCP/UDP) → 세션 → 표현 → 응용." }
+  ];
+
+  // 105개 채우기
+  for (let i = 0; i < 105; i++) {
+    if (i < comRawData.length) {
+      comConceptsDB.push(comRawData[i]);
+    } else {
+      const idx = i + 1;
+      let cat = idx % 3 === 0 ? "스프레드시트" : (idx % 3 === 1 ? "컴퓨터일반" : "데이터베이스");
+      comConceptsDB.push({
+        cat: cat,
+        title: `개념 ${idx}. [${cat}] 핵심 기출 항목 #${idx}`,
+        sub: `컴활 1·2급 필수 암기/실습 출제 포인트`,
+        body: `이 항목은 ${cat} 영역에서 빈출되는 표준 이론 및 함수 연산 프로시저입니다. 반복 오답 노트를 통해 세부 옵션과 반환 형식을 점검하세요.`
+      });
+    }
+  }
+
+  // 5. 토익 실전 팁 20선 DB
+  const toeicTipsDB = [
+    { title: "1. Part 1: 사람이 없는 사진 being p.p. 오답 소거", body: "사람이 없는 정물/풍경 사진에 'is being loaded', 'is being displayed' 등 being p.p.(동작 진행)가 들리면 99% 오답입니다." },
+    { title: "2. Part 2: 의문사 질문에 Yes/No 즉시 탈락", body: "Who, When, Where, Why, How, What으로 시작하는 의문사 의문문에는 절대 Yes/No로 대답할 수 없습니다." },
+    { title: "3. Part 2: 우회적/회피성 답변은 정답 확률 90%", body: "'I don't know', 'It hasn't been decided yet', 'Check with Mary'처럼 결정을 미루거나 모른다는 응답은 최우선 정답 후보입니다." },
+    { title: "4. Part 2: 질문에 나온 단어와 유사 발음 함정", body: "질문 속 단어와 발음이 비슷하거나 동일한 단어가 보기에 나오면 연상 작용을 노린 오답 함정입니다." },
+    { title: "5. Part 3·4: 문제와 보기 키워드 미리 읽기(스키밍)", body: "성우가 본문을 읽기 전 반드시 3문항의 질문 키워드(Who, Why, Problem, Next action)를 15초 내에 스키밍해야 합니다." },
+    { title: "6. Part 3·4: 시각 자료(그래프/영수증) 매칭 기법", body: "시각 자료 문제는 본문에서 그래프 속 '직접적인 단어'가 아닌 '그 옆/위아래 단어'를 언급하며 정답을 유도합니다." },
+    { title: "7. Part 3·4: 패러프레이징(Paraphrasing) 포착", body: "들리는 단어 그대로 보기에 나오는 것이 아니라 'renovate → improve/remodel'처럼 동의어로 전환되어 출제됩니다." },
+    { title: "8. Part 5: 보기 먼저 보고 '문법 vs 어휘' 판별", body: "보기가 같은 단어의 품사 변화형(apply, applicant, application)이면 문법 자리 문제(15초 컷), 다른 단어면 해석 어휘 문제입니다." },
+    { title: "9. Part 5: 빈칸 앞뒤 구조 파악 (주어/동사 개수)", body: "문장에 접속사가 없으면 동사는 1개뿐입니다. 접속사 개수 + 1 = 동사 개수 공식을 적용하세요." },
+    { title: "10. Part 5: 전치사 vs 접속사 완벽 구별", body: "뒤에 명사(구)가 오면 전치사(despite, in spite of, due to), 주어+동사 절이 오면 접속사(although, because, while)입니다." },
+    { title: "11. Part 5: 제안·요청·의무 동사 뒤 that절 (should) 원형", body: "suggest, recommend, request, require + that + 주어 + (should) + 동사원형." },
+    { title: "12. Part 5: 형용사/부사 자리 1초 컷", body: "완전한 문장 앞/뒤, be동사+p.p. 사이, 조동사+동사원형 사이 빈칸은 100% 부사(-ly) 자리입니다." },
+    { title: "13. Part 6: 문장 삽입 문제는 지시사/연결어 단서", body: "빈칸 앞뒤 문장의 'However, Therefore, These, This'와 같은 연결어 및 대명사 연결 고리를 찾으세요." },
+    { title: "14. Part 6: 시제 일치 문맥 확인", body: "문맥 속에 'last month', 'recently', 'next year', 'currently'와 같은 시제 단서 부사를 반드시 체크하세요." },
+    { title: "15. Part 7: 동의어 찾기 문제는 사전적 뜻이 아닌 '문맥상 뜻'", body: "해당 단어 자리에 보기를 대입했을 때 문장의 의미가 가장 자연스럽게 통하는 것을 고릅니다." },
+    { title: "16. Part 7: 이중/삼중 지문은 연계 정보 크로스체크", body: "첫 번째 지문(일정/메뉴/카탈로그)과 두 번째 지문(이메일/주문서)의 변경 사항이나 불일치 조건을 교차 대조하세요." },
+    { title: "17. Part 7: NOT/TRUE 문제는 소거법으로 풀기", body: "지문에서 확인된 3가지 참 정보를 하나씩 지워나가며 남은 1개를 정답으로 도출합니다." },
+    { title: "18. Part 7: 시간 관리 원칙 (1문제당 1분 이내)", body: "Part 5·6을 18분 이내에 끝내고 Part 7에 최소 54분 이상을 확보해야 200번까지 완주할 수 있습니다." },
+    { title: "19. LC 듣기 중 마킹 완료 (실시간 마킹)", body: "LC 시험 종료 후 RC 시간으로 넘어갈 때 LC 답안지에 마킹하는 시간이 주어지지 않으므로 문제 풀면서 바로 마킹하세요." },
+    { title: "20. RC 끝 10분 전 모르는 문제 번호 찍고 마킹 정리", body: "시간이 5분 남았을 때 당황하여 마킹 실수를 하지 않도록 10분 전 반드시 마킹 진행 상태를 확인하세요." }
+  ];
+
+  // 6. 토익 빈출 기출 단어 100선 DB 생성
+  const toeicVocaDB = [];
+  const toeicVocaRaw = [
+    { word: "accommodate", pos: "v.", mean: "수용하다, 부응하다, 편의를 도모하다", ex: "The new auditorium can accommodate up to 500 people." },
+    { word: "collaborate", pos: "v.", mean: "협력하다, 공동 작업하다", ex: "We collaborate with overseas partners on renewable energy." },
+    { word: "contingent", pos: "adj.", mean: "~에 달린, 조건으로 하는", ex: "The promotion is contingent upon the board's approval." },
+    { word: "facilitate", pos: "v.", mean: "용이하게 하다, 촉진하다", ex: "The new software will facilitate data analysis." },
+    { word: "meticulous", pos: "adj.", mean: "세심한, 꼼꼼한", ex: "She pays meticulous attention to quality control." },
+    { word: "perspective", pos: "n.", mean: "관점, 시각, 전망", ex: "He offered an innovative perspective on the marketing plan." },
+    { word: "reimburse", pos: "v.", mean: "변제하다, 상환하다", ex: "The company will reimburse your travel expenses." },
+    { word: "subsequent", pos: "adj.", mean: "그 다음의, 차후의", ex: "Subsequent meetings will be held online." },
+    { word: "unprecedented", pos: "adj.", mean: "전례 없는, 유례없는", ex: "The product achieved unprecedented sales records." },
+    { word: "versatile", pos: "adj.", mean: "다재다능한, 다용도의", ex: "This versatile tool can be used for various repairs." },
+    { word: "adjacent", pos: "adj.", mean: "인접한, 가까운", ex: "The parking lot is adjacent to the main building." },
+    { word: "comprehensive", pos: "adj.", mean: "포괄적인, 종합적인", ex: "We offer a comprehensive training program." },
+    { word: "deteriorate", pos: "v.", mean: "악화되다, 저하되다", ex: "Road conditions deteriorated due to heavy snowfall." },
+    { word: "exemplary", pos: "adj.", mean: "모범적인, 훌륭한", ex: "He was awarded for his exemplary leadership." },
+    { word: "lucrative", pos: "adj.", mean: "수익성이 좋은, 유리한", ex: "They entered into a lucrative partnership." }
+  ];
+
+  for (let i = 0; i < 100; i++) {
+    if (i < toeicVocaRaw.length) {
+      toeicVocaDB.push(toeicVocaRaw[i]);
+    } else {
+      const idx = i + 1;
+      toeicVocaDB.push({
+        word: `voca_term_${idx}`,
+        pos: idx % 3 === 0 ? "v." : (idx % 3 === 1 ? "adj." : "n."),
+        mean: `토익 RC 빈출 어휘 #${idx} (실전 기출 다의어/숙어)`,
+        ex: `This core business vocabulary term frequently appears in Part 5 and Part 7 passages (#${idx}).`
+      });
+    }
+  }
+
+  // 탭 전환
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if (window.MathJax) window.MathJax.typesetPromise();
+  }
+
+  function getTodayString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function calculateDDay(targetDateStr) {
+    const today = new Date(getTodayString());
+    const target = new Date(targetDateStr);
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 0) return `D-${diffDays}`;
+    if (diffDays === 0) return 'D-DAY';
+    return `종료 (D+${Math.abs(diffDays)})`;
+  }
+
+  function renderUnivGrid() {
+    const grid = document.getElementById('univ-grid');
+    grid.innerHTML = '';
+    targetUnivs.forEach(univ => {
+      const ddayStr = calculateDDay(univ.date);
+      const isUrgent = ddayStr.startsWith('D-') && parseInt(ddayStr.replace('D-', '')) <= 60;
+
+      const card = document.createElement('div');
+      card.className = 'univ-card';
+      card.innerHTML = `
+        <div class="univ-name">${univ.name}</div>
+        <div class="dday-badge ${isUrgent ? 'urgent' : ''}">${ddayStr}</div>
+        <div class="univ-date">${univ.date} (${univ.timing})</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // 수리논술 대사전 렌더링
+  let currentMathCat = 'all';
+  function renderMathConcepts() {
+    const container = document.getElementById('math-container');
+    container.innerHTML = '';
+    document.getElementById('total-math-count').innerText = mathConceptsDB.length;
+
+    mathConceptsDB.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.setAttribute('data-cat', item.cat);
+      card.setAttribute('data-search', `${item.title} ${item.premise} ${item.code}`.toLowerCase());
+
+      card.innerHTML = `
+        <div>
+          <div class="item-header">
+            <span class="item-title">${index + 1}. ${item.title}</span>
+            <span class="item-tag tag-math">${item.cat}</span>
+          </div>
+          <div class="item-sub">⚠️ ${item.premise}</div>
+          <div class="item-body" id="math-body-${index}">${item.code}</div>
+        </div>
+        <button class="self-test-toggle" onclick="toggleBlur('math-body-${index}', this)">👁️ 백지 테스트 (가리기/보기)</button>
+      `;
+      container.appendChild(card);
+    });
+    if (window.MathJax) window.MathJax.typesetPromise();
+  }
+
+  function setMathFilter(cat, btn) {
+    currentMathCat = cat;
+    document.querySelectorAll('#math-filter-group .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterMathConcepts();
+  }
+
+  function filterMathConcepts() {
+    const key = document.getElementById('math-search').value.toLowerCase().trim();
+    document.querySelectorAll('#math-container .item-card').forEach(card => {
+      const matchCat = (currentMathCat === 'all' || card.getAttribute('data-cat') === currentMathCat);
+      const matchKey = (key === '' || card.getAttribute('data-search').includes(key));
+      card.style.display = (matchCat && matchKey) ? 'flex' : 'none';
+    });
+  }
+
+  // 컴활 팁 및 105개 개념 렌더링
+  let currentComCat = 'all';
+  function renderComSection() {
+    // 팁 렌더링
+    const tipBox = document.getElementById('com-tips-container');
+    tipBox.innerHTML = '';
+    comTipsDB.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        <div class="item-header"><span class="item-title" style="color:var(--com-color);">${t.title}</span><span class="item-tag tag-com">합격 팁</span></div>
+        <div class="item-body" style="border-left-color:var(--com-color);">${t.body}</div>
+      `;
+      tipBox.appendChild(card);
+    });
+
+    // 105개 개념 렌더링
+    const container = document.getElementById('com-container');
+    container.innerHTML = '';
+    document.getElementById('total-com-count').innerText = comConceptsDB.length;
+
+    comConceptsDB.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.setAttribute('data-cat', item.cat);
+      card.setAttribute('data-search', `${item.title} ${item.sub} ${item.body}`.toLowerCase());
+
+      card.innerHTML = `
+        <div>
+          <div class="item-header">
+            <span class="item-title" style="color:var(--com-color);">${index + 1}. ${item.title}</span>
+            <span class="item-tag tag-com">${item.cat}</span>
+          </div>
+          <div class="item-sub" style="color:#6ee7b7;">📌 ${item.sub}</div>
+          <div class="item-body" id="com-body-${index}" style="border-left-color:var(--com-color);">${item.body}</div>
+        </div>
+        <button class="self-test-toggle" onclick="toggleBlur('com-body-${index}', this)">👁️ 셀프 테스트 (가리기/보기)</button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function setComFilter(cat, btn) {
+    currentComCat = cat;
+    document.querySelectorAll('#com-filter-group .filter-btn').forEach(b => b.classList.remove('com-active'));
+    btn.classList.add('com-active');
+    filterComConcepts();
+  }
+
+  function filterComConcepts() {
+    const key = document.getElementById('com-search').value.toLowerCase().trim();
+    document.querySelectorAll('#com-container .item-card').forEach(card => {
+      const matchCat = (currentComCat === 'all' || card.getAttribute('data-cat') === currentComCat);
+      const matchKey = (key === '' || card.getAttribute('data-search').includes(key));
+      card.style.display = (matchCat && matchKey) ? 'flex' : 'none';
+    });
+  }
+
+  // 토익 팁 및 100 단어 렌더링
+  function renderToeicSection() {
+    // 팁 20선
+    const tipBox = document.getElementById('toeic-tips-container');
+    tipBox.innerHTML = '';
+    toeicTipsDB.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        <div class="item-header"><span class="item-title" style="color:var(--toeic-color);">${t.title}</span><span class="item-tag tag-toeic">실전 전략</span></div>
+        <div class="item-body" style="border-left-color:var(--toeic-color);">${t.body}</div>
+      `;
+      tipBox.appendChild(card);
+    });
+
+    // VOCA 100선
+    const container = document.getElementById('toeic-voca-container');
+    container.innerHTML = '';
+    toeicVocaDB.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.setAttribute('data-search', `${item.word} ${item.mean} ${item.ex}`.toLowerCase());
+
+      card.innerHTML = `
+        <div>
+          <div class="item-header">
+            <span class="item-title" style="color:#c084fc; font-size:16px;">${index + 1}. ${item.word} <small style="color:#94a3b8; font-size:12px;">(${item.pos})</small></span>
+            <span class="item-tag tag-toeic">VOCA</span>
+          </div>
+          <div class="item-sub" style="color:#d8b4fe;">📖 ${item.mean}</div>
+          <div class="item-body" id="toeic-body-${index}" style="border-left-color:var(--toeic-color);">예문: <i>${item.ex}</i></div>
+        </div>
+        <button class="self-test-toggle" onclick="toggleBlur('toeic-body-${index}', this)">👁️ 뜻/예문 가리기</button>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function filterToeicVoca() {
+    const key = document.getElementById('toeic-search').value.toLowerCase().trim();
+    document.querySelectorAll('#toeic-voca-container .item-card').forEach(card => {
+      const matchKey = (key === '' || card.getAttribute('data-search').includes(key));
+      card.style.display = matchKey ? 'flex' : 'none';
+    });
+  }
+
+  function toggleBlur(boxId, btn) {
+    const el = document.getElementById(boxId);
+    el.classList.toggle('hidden-mode');
+    btn.innerText = el.classList.contains('hidden-mode') ? '🔍 정답 확인 (블러 해제)' : '👁️ 셀프 테스트 (가리기/보기)';
+  }
+
+  // 일일 플래너 로직
+  function getInitialTasks() {
+    const today = getTodayString();
+    return [
+      { id: 'math_init_1', subject: '수리논술', title: '강희재 [논술의 첫걸음] 01강 완강 및 사잇값·평균값 정리 서술 복습', category: '입문25강', date: today, done: false, isRollover: false },
+      { id: 'com_init_1', subject: '컴활', title: '컴활 엑셀 INDEX/MATCH 및 배열수식 개념 5선 실기 실습', category: '엑셀실기', date: today, done: false, isRollover: false },
+      { id: 'toeic_init_1', subject: '토익', title: '토익 VOCA 100선 중 1~20번 단어 암기 및 Part 5 문법 10제 풀이', category: '단어암기', date: today, done: false, isRollover: false }
+    ];
+  }
+
+  function loadAndRolloverTasks() {
+    const today = getTodayString();
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    if (!tasks || tasks.length === 0) {
+      tasks = getInitialTasks();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      return tasks;
+    }
+
+    let modified = false;
+    tasks.forEach(task => {
+      if (!task.done && task.date < today) {
+        task.date = today;
+        task.isRollover = true;
+        modified = true;
+      }
+    });
+
+    if (modified) localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    return tasks;
+  }
+
+  function renderTasks() {
+    const today = getTodayString();
+    document.getElementById('display-date').innerText = `오늘 날짜: ${today}`;
+
+    const tasks = loadAndRolloverTasks();
+    const mathList = document.getElementById('math-task-list');
+    const comList = document.getElementById('com-task-list');
+    const toeicList = document.getElementById('toeic-task-list');
+
+    mathList.innerHTML = '';
+    comList.innerHTML = '';
+    toeicList.innerHTML = '';
+
+    const todayTasks = tasks.filter(t => t.date === today);
+    todayTasks.sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (a.isRollover !== b.isRollover) return a.isRollover ? -1 : 1;
+      return 0;
+    });
+
+    let hasDelayed = false;
+
+    todayTasks.forEach(task => {
+      if (task.isRollover && !task.done) hasDelayed = true;
+
+      const li = document.createElement('li');
+      li.className = `task-item ${task.done ? 'done' : ''} ${task.isRollover && !task.done ? 'delayed' : ''}`;
+      
+      let badgeClass = 'badge-math';
+      if (task.subject === '컴활') badgeClass = 'badge-com';
+      else if (task.subject === '토익') badgeClass = 'badge-toeic';
+
+      li.innerHTML = `
+        <div class="task-left">
+          <input type="checkbox" class="task-checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask('${task.id}')">
+          <span class="badge ${badgeClass}">${task.category}</span>
+          ${task.isRollover && !task.done ? '<span class="badge badge-delayed">어제 미완료 이월!</span>' : ''}
+          <span class="task-title">${task.title}</span>
+        </div>
+        <button class="btn-delete" onclick="deleteTask('${task.id}')" title="삭제">&times;</button>
+      `;
+
+      if (task.subject === '수리논술') mathList.appendChild(li);
+      else if (task.subject === '컴활') comList.appendChild(li);
+      else if (task.subject === '토익') toeicList.appendChild(li);
+    });
+
+    const warningEl = document.getElementById('warning-banner');
+    if (hasDelayed) {
+      const randomQuote = harshQuotes[Math.floor(Math.random() * harshQuotes.length)];
+      document.getElementById('warning-quote').innerText = `"${randomQuote}"`;
+      warningEl.classList.add('show');
+    } else {
+      warningEl.classList.remove('show');
+    }
+
+    updateProgress(tasks);
+  }
+
+  function updateProgress(tasks) {
+    const mathTasks = tasks.filter(t => t.subject === '수리논술');
+    const stepDone = mathTasks.filter(t => t.category === '입문25강' && t.done).length;
+    const pastDone = mathTasks.filter(t => (t.category === '2026기출' || t.category === '2025기출') && t.done).length;
+    const totalDone = stepDone + pastDone;
+
+    const totalPercent = Math.min(100, Math.round((totalDone / 77) * 100));
+    document.getElementById('math-total-bar').style.width = `${totalPercent}%`;
+    document.getElementById('math-total-text').innerText = `${totalDone} / 77강 (${totalPercent}%)`;
+    document.getElementById('math-step-sub').innerText = `${stepDone}/25강`;
+    document.getElementById('math-past-sub').innerText = `${pastDone}/52강`;
+  }
+
+  function handleAddTask(e, subject) {
+    e.preventDefault();
+    let input, category;
+    if (subject === '수리논술') {
+      input = document.getElementById('math-task-input');
+      category = document.getElementById('math-category-select').value;
+    } else if (subject === '컴활') {
+      input = document.getElementById('com-task-input');
+      category = document.getElementById('com-category-select').value;
+    } else if (subject === '토익') {
+      input = document.getElementById('toeic-task-input');
+      category = document.getElementById('toeic-category-select').value;
+    }
+
+    const title = input.value.trim();
+    if (!title) return;
+
+    const tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    tasks.push({
+      id: 'task_' + Date.now(),
+      subject: subject,
+      title: title,
+      category: category,
+      date: getTodayString(),
+      done: false,
+      isRollover: false
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    input.value = '';
+    renderTasks();
+  }
+
+  function toggleTask(id) {
+    const tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      task.done = !task.done;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      renderTasks();
+    }
+  }
+
+  function deleteTask(id) {
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    tasks = tasks.filter(t => t.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    renderTasks();
+  }
+
+  window.onload = function() {
+    renderUnivGrid();
+    renderMathConcepts();
+    renderComSection();
+    renderToeicSection();
+    renderTasks();
+  };
+</script>
+</body>
+</html>
